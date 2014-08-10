@@ -17,16 +17,18 @@ trans_Train[,7:10][trans_Train[,7:10]==0] <- 0.001
 trans_Train[,7:10] <- log(trans_Train[,7:10]) #transforms column 7:10 to log value
 trans_Test <- maintest
 trans_Test[,7:10][trans_Test[,7:10]==0] <- 0.001
-trans_Test[,7:10] <- log(maintest[,7:10]) #transforms column 7:10 to log value
+trans_Test[,7:10] <- log(trans_Test[,7:10]) #transforms column 7:10 to log value
 library("rpart")
 library("class")
 library("e1071")
 install.packages("randomForest")
 library("randomForest")
 
-summary(trans_Train[,7:10])
 summary(trans_Test)
-cor(trans_Train[,5:12])
+
+summary(trans_Train[,7:10])
+summary(trans_Test[,7:10])
+cor(trans_Test[,5:12])
 
 # Load of data-sets
 FullTrain <- read.csv("training.csv", header=TRUE)
@@ -71,6 +73,8 @@ maintrain = FullTrain[-indexes,]
 nrow(FullTrain) #80046 - 100%
 nrow(maintrain) #64037 - 80%
 nrow(maintest) #16009 - 20%
+nrow(trans_Test)
+nrow(trans_Train)
 
 	# Transform
 trans_Train[,7:10][trans_Train[,7:10]==0] <- 0.001
@@ -120,32 +124,38 @@ min(test_error)
 test_error
 
 # SVM - Support Vector Machine 
-# Result: trans_Train: .3309/.3283 [,3:12]/[,1:12] trans_Test: .4388157 / 0.4373 [,3:12]/[,1:12]
-#train<-read.csv("training.csv",header=TRUE)
+# Result: trans_Test: .3354/.3309 [,3:12]
+# for maintrain and maintest: test errorrate: .365, cost=1
+#train<-read.csv("training.csv",header=TRUE) 
+# second test: .364 [1:1000,3:12] -> next .3309 / .3354
 i<-1
 cost<-i
-for(i in 1:1000){
-y<-as.factor(trans_Train[1:1000,13])
-x<-trans_Train[1:1000,3:12]
-y_test<-as.factor(trans_Test[1:1000,13])
-x_test<-trans_Test[1:1000,3:12]
-fit<-svm(x,y,cost=i)
+for(i in 1:10){
+y<-as.factor(trans_Train[,13])
+x<-trans_Train[,3:12]
+y_test<-as.factor(trans_Test[,13])
+x_test<-trans_Test[,3:12]
+fit<-svm(x,y,cost=1)
 train_error[i]<-1-sum(y==predict(fit,x))/length(y)
 test_error[i]<-1-sum(y_test==predict(fit,x_test))/length(y_test)
 cost[i]<-i
 i<-i+1
 }
+cost
+i
+plot(cost,test_error, type="l")
+train_error
 
 # KNN - K Nearest Neighbour 
 # Results: trans_Test: 0.4346305 for k=5
-# Optimal k: 
-	y<-as.factor(trans_Train[,13])
-	x<-trans_Train[,3:12]
-	y_test<-as.factor(trans_Test[,13])
-	x_test<-trans_Test[,3:12]
+# for maintest: .448
+	y<-as.factor(maintrain[1:1000,13])
+	x<-maintrain[1:1000,3:12]
+	y_test<-as.factor(maintest[1:1000,13])
+	x_test<-maintest[1:1000,3:12]
 	i<-1
 	fit_test<-knn(x,x_test,y,k=1)
-	fit<-knn(x,x,y,k=1)
+	fit<-knn(x,x,y,k=5)
 	train_error<-
 	1-sum(y==fit)/length(y)
 	test_error<-
@@ -175,24 +185,27 @@ legend(2,.8,c("Train error","Test error"),col=c("blue","black"),lty=1,pch=19)
 # NaiveBayes
 ?naiveBayes()
 
-naive_model   <- naiveBayes(trans_Train[1:60000, -c(11)], trans_Train[1:60000, 11], laplace = 1)
-naive_predict <- predict(naive_model, trans_Train[60001:80000, -c(11)], type=c("class"))
+naive_model   <- naiveBayes(trans_Train[1:1000, -c(13)], trans_Train[1:1000, 13], laplace = 1)
+naive_predict <- predict(naive_model, trans_Train[60001:80000, -c(13)], type=c("class"))
 summary(naive_predict)
-test_error<-1-sum(y_test==fit_test)/length(y_test)
+
+1-sum(y_test==predict(naive_model,x_test))/length(y_test)
 
 pairs(trans_Train[1:10,5:12],col=c("red","blue","lightgreen","lightblue","green","cyan","magenta","purple"))
 naiveBayes(trans_Train,)
 
 classifier<-naiveBayes(trans_Train[,5:12], trans_Train[,13]) 
 table(predict(classifier, trans_Train[,-13]), trans_Train[,13])
+classifier 
+
 
 # Ensemble methods:
-# RandomForest
+# RandomForest testerror: .38 [1:1000,3:12]
 
-y<-as.factor(trans_Train[,13])
-x<-trans_Train[,3:12]
-y_test<-as.factor(trans_Test[,13])
-x_test<-trans_Test[,3:12]
+y<-as.factor(trans_Train[1:1000,13])
+x<-trans_Train[1:1000,3:12]
+y_test<-as.factor(trans_Test[1:1000,13])
+x_test<-trans_Test[1:1000,3:12]
 fit<-randomForest(x,y) 
 1-sum(y_test==predict(fit,x_test))/length(y_test)
 
