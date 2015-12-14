@@ -1,3 +1,4 @@
 # Gitignore for this repo
-.ideas
+.idea
 .DS_STORE
+.gitignore
