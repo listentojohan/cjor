@@ -14,11 +14,17 @@ ids = newsgroups.fileids()
 
 random.seed(0)
 random.shuffle(ids)
-#ids = ids[:5000]  # Change for whole dataset
+ids = ids[:5000]  # Change for whole dataset
 size = len(ids)
 
 testSet = ids[:int(size*0.1)]
 trainSet = ids[int(size*0.1):]
+
+test_skl = []
+t_test_skl = []
+for d in testSet:
+    test_skl.append(d[0])
+    t_test_skl.append(d[1])
 
 print("Length of training data: ", len(trainSet), "\nLength of test data: ", len(testSet))
 
@@ -134,6 +140,12 @@ def main():
 
     print("SVM: ", nltk.classify.accuracy(svm, testData))
 
+    svm = SklearnClassifier(LinearSVC(loss="hinge"))
+    svm.train(trainData)
+    print("SVM: ", nltk.classify.accuracy(svm, testData))
+    results = svm.classify_many(item[0] for item in testData)
+
+    print(results)
 
     # KMeans
 
@@ -143,10 +155,11 @@ def main():
     print("KMeans: ", nltk.classify.accuracy(km, testData))
 
     # K nearest neighbors
-    #from sklearn.neighbors import KNeighborsClassifier
-    #knn = SklearnClassifier(KNeighborsClassifier)
-    #knn.train(trainData)
-    #print("KNN: ", nltk.classify.accuracy(knn, testData))
+    from sklearn.neighbors import KNeighborsClassifier
+    knn = SklearnClassifier(KNeighborsClassifier())
+    knn.train(trainData)
+    print("KNN 1: ", nltk.classify.accuracy(knn, testData))
+
 
 '''
 # Some tests with other ways as representation
@@ -178,7 +191,7 @@ def main3():
     from sklearn.metrics import classification_report
 
     # getting a full report
-    print(classification_report(testData, results))
+    print(classification_report(t_test_skl, results, labels=list(set(t_test_skl)), target_names=t_test_skl))
 
     # Compute confusion matrix
     import numpy as np
