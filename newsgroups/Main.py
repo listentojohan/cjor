@@ -4,9 +4,9 @@ import nltk
 import random
 from collections import defaultdict
 from sklearn import feature_extraction
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
-#vectorizer = TfidfVectorizer()
+vectorizer = TfidfVectorizer()
 
 newsgroups = nltk.corpus.PlaintextCorpusReader('./data/', '.*/[0-9]+', encoding='latin1')
 #newsgroups = vectorizer.fit_transform(newsgroups)
@@ -36,7 +36,7 @@ def vectorize(text):
 def features(text):
     # Convert a post into a dictionary of features
     features = defaultdict(int)
-    for word in text:
+    for word in text:  # should just be text instead of vectorizer
         if word.isalpha():
             features[word.lower()] += 1
     return features
@@ -63,11 +63,12 @@ testData = [(features(newsgroups.words(fileids=f)),getclass(f)) for f in testSet
 #print("c: ", c)
 
 #sum(c == default for f, c in testData) / float(len(testData))
+
+
 def main():
     # Naive Bayes
     nb = nltk.NaiveBayesClassifier.train(trainData)
     print("NB: ", nltk.classify.accuracy(nb, testData))
-
 
     from nltk.classify.scikitlearn import SklearnClassifier
     from sklearn.naive_bayes import BernoulliNB, GaussianNB
@@ -95,11 +96,10 @@ def main():
     pmulti.train(trainData)
     print("NB Multinomial (pmulti): ", nltk.classify.accuracy(pmulti, testData))
 
-
     from sklearn.metrics import f1_score
 
     #results = pmulti.batch_classify(item[0] for item in testData)
-    #results[:10]
+    #print(results[:10])
     #print(f1_score([item[1] for item in testData], results))
 
     # Logistic Reggression
@@ -118,21 +118,35 @@ def main():
     forest.train(trainData)
     print("Random Forest: ", nltk.classify.accuracy(forest, testData))
 
+    # AdaBoost
     adaboost = SklearnClassifier(AdaBoostClassifier())
     adaboost.train(trainData)
     print("Adaboost: ", nltk.classify.accuracy(adaboost, testData))
 
-    #from sklearn.neural_network import
 
     # Support Vector Machines
 
     from sklearn.svm import LinearSVC
     from sklearn.metrics import confusion_matrix
 
-    svm = SklearnClassifier(LinearSVC())
+    svm = SklearnClassifier(LinearSVC(loss="hinge"))
     svm.train(trainData)
 
     print("SVM: ", nltk.classify.accuracy(svm, testData))
+
+
+    # KMeans
+
+    from sklearn.cluster import KMeans
+    km = SklearnClassifier(KMeans())
+    km.train(trainData)
+    print("KMeans: ", nltk.classify.accuracy(km, testData))
+
+    # K nearest neighbors
+    #from sklearn.neighbors import KNeighborsClassifier
+    #knn = SklearnClassifier(KNeighborsClassifier)
+    #knn.train(trainData)
+    #print("KNN: ", nltk.classify.accuracy(knn, testData))
 
 '''
 # Some tests with other ways as representation
@@ -148,36 +162,49 @@ def main2():
 
 '''
 
+
+def main3():
+    from nltk.classify.scikitlearn import SklearnClassifier
+    from sklearn.svm import LinearSVC
+    from sklearn.metrics import confusion_matrix
+    from matplotlib import pyplot
+
+    svm = SklearnClassifier(LinearSVC(loss="hinge"))
+    svm.train(trainData)
+    print("SVM: ", nltk.classify.accuracy(svm, testData))
+    results = svm.classify_many(item[0] for item in testData)
+
+    print(results)
+    from sklearn.metrics import classification_report
+
+    # getting a full report
+    print(classification_report(testData, results))
+
+    # Compute confusion matrix
+    import numpy as np
+    cmm = confusion_matrix([x[1] for x in testData], results)
+
+    print(cmm)
+    cmm = np.array(cmm, dtype = np.float)
+    print(cmm.shape)
+
+    #f=figure()
+    #ax = f.add_subplot(111)
+    #show()
+    #%pylab inline
+
+    # Show confusion matrix in a separate window
+    print(pyplot.imshow(cmm, interpolation='nearest'))
+    #pl.
+
+
+
 if __name__ == '__main__':
     main()
     #main2()
+    #main3()
 
 
-'''
-results = svm.batch_classify(item[0] for item in testData)
 
-print(results)
 
-# Compute confusion matrix
-import numpy as np
-
-cmm = confusion_matrix([x[1] for x in testData], results)
-
-print(cmm)
-cmm = np.array(cmm,dtype = np.float)
-print(cmm.shape)
-
-#f=figure()
-#ax = f.add_subplot(111)
-#show()
-#%pylab inline
-
-# Show confusion matrix in a separate window
-print(imshow(cmm,interpolation='nearest'),
-title('Confusion matrix'),
-colorbar(),
-ylabel('True label'),
-xlabel('Predicted label'))
-#pl.
-'''
 
