@@ -156,9 +156,11 @@ def main():
 
     # K nearest neighbors
     from sklearn.neighbors import KNeighborsClassifier
-    knn = SklearnClassifier(KNeighborsClassifier())
+    k = 5
+    knn = SklearnClassifier(KNeighborsClassifier(n_neighbors=k))
     knn.train(trainData)
     print("KNN 1: ", nltk.classify.accuracy(knn, testData))
+
 
 
 '''
